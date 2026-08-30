@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cow-ton</title>
+<style>
+  body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a0a;
+    overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+    user-select: none;
+  }
+
+  .stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .neon-btn {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    padding: 0;
+    font-size: 26px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 0 6px #000, 0 0 12px #000;
+    /* Рисунок коровьих пятен */
+    background:
+      radial-gradient(circle at 20% 20%, #111 6px, transparent 7px),
+      radial-gradient(circle at 60% 15%, #111 5px, transparent 6px),
+      radial-gradient(circle at 85% 40%, #111 7px, transparent 8px),
+      radial-gradient(circle at 30% 55%, #111 5px, transparent 6px),
+      radial-gradient(circle at 70% 70%, #111 6px, transparent 7px),
+      radial-gradient(circle at 10% 80%, #111 5px, transparent 6px),
+      radial-gradient(circle at 50% 90%, #111 6px, transparent 7px),
+      radial-gradient(circle at 90% 85%, #111 5px, transparent 6px),
+      #ffffff;
+    background-size: 40px 40px;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 2px;
+    box-shadow:
+      0 0 10px #fff,
+      0 0 20px #fff,
+      0 0 40px #fff,
+      0 0 80px #fff,
+      inset 0 0 15px #fff;
+    animation: flicker 2.5s infinite alternate;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+
+  .neon-btn:hover {
+    transform: scale(1.05);
+  }
+
+  .neon-btn:active {
+    transform: scale(0.95);
+  }
+
+  @keyframes flicker {
+    0%, 18%, 22%, 25%, 53%, 57%, 100% {
+      box-shadow:
+        0 0 10px #fff,
+        0 0 20px #fff,
+        0 0 40px #fff,
+        0 0 80px #fff,
+        inset 0 0 15px #fff;
+    }
+    20%, 24%, 55% {
+      box-shadow: 0 0 5px rgba(255,255,255,0.3), inset 0 0 5px rgba(255,255,255,0.3);
+    }
+  }
+
+  .cow {
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    font-size: 60px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.5);
+  }
+
+  .cow.fly {
+    animation: cow-appear 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  @keyframes cow-appear {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, 30px) scale(0.4) rotate(-15deg);
+    }
+    20% {
+      opacity: 1;
+      transform: translate(-50%, -20px) scale(1.2) rotate(10deg);
+    }
+    40% {
+      transform: translate(-50%, -40px) scale(1) rotate(-5deg);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -160px) scale(0.5) rotate(20deg);
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+  <button class="neon-btn" id="btn">Cow-ton</button>
+</div>
+
+<script>
+  const stage = document.getElementById('stage');
+  const btn = document.getElementById('btn');
+
+  function playMoo() {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    
+    const ctx = new AudioContext();
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    const vibrato = ctx.createOscillator();
+    const vibratoGain = ctx.createGain();
+    const gain = ctx.createGain();
+
+    // Мощная волна, которую хорошо слышно
+    osc.type = 'sawtooth'; 
+
+    // Настройка частоты "Му-у-у"
+    osc.frequency.setValueAtTime(150, now);
+    osc.frequency.linearRampToValueAtTime(120, now + 0.2);
+    osc.frequency.linearRampToValueAtTime(160, now + 0.5);
+    osc.frequency.linearRampToValueAtTime(75, now + 0.9);
+
+    // Коровье вибрато
+    vibrato.type = 'sine';
+    vibrato.frequency.value = 9;
+    vibratoGain.gain.value = 15;
+    
+    vibrato.connect(vibratoGain);
+    vibratoGain.connect(osc.frequency);
+
+    // Громкость выкручена на максимум (0.95)
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.95, now + 0.05);
+    gain.gain.setValueAtTime(0.95, now + 0.55);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
+
+    // Прямое подключение к выходу звука
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    vibrato.start(now);
+    
+    osc.stop(now + 1.0);
+    vibrato.stop(now + 1.0);
+
+    // Очистка памяти
+    setTimeout(() => {
+      ctx.close();
+    }, 1100);
+  }
+
+  btn.addEventListener('click', () => {
+    playMoo();
+
+    // Создаем корову
+    const cow = document.createElement('div');
+    cow.className = 'cow';
+    cow.textContent = '🐄';
+    
+    // Небольшой случайный разброс влево-вправо при клике
+    const randomOffset = Math.floor(Math.random() * 60) - 30;
+    cow.style.marginLeft = `${randomOffset}px`;
+    
+    stage.appendChild(cow);
+
+    // Запуск анимации
+    requestAnimationFrame(() => {
+      cow.classList.add('fly');
+    });
+
+    // Удаление из DOM
+    setTimeout(() => {
+      cow.remove();
+    }, 1200);
+  });
+</script>
+
+</body>
+</html>
+
